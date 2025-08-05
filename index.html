@@ -2,109 +2,134 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-  <title>❤️</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>💜</title>
   <style>
-    canvas {
+    html, body {
+      margin: 0; padding: 0; overflow: hidden; height: 100%; background: black;
+      display: flex; flex-direction: column;
+      align-items: center;
+      user-select: none;
+    }
+    #colorSliderContainer {
+      width: 300px;
+      height: 30px;
+      margin: 10px;
+      position: relative;
+      cursor: pointer;
+      background: linear-gradient(to right, 
+        red, orange, yellow, green, cyan, blue, violet, magenta, red);
+      border-radius: 5px;
+      z-index: 10;
+    }
+    #sliderThumb {
+      width: 12px;
+      height: 30px;
+      background: white;
+      border-radius: 3px;
       position: absolute;
-      left: 0;
       top: 0;
+      left: 0;
+      transform: translateX(-50%);
+      pointer-events: none;
+    }
+    #container {
+      flex: 1;
+      width: 100vw;
+      height: 100vh;
+      position: relative;
+    }
+    canvas {
+      display: block;
       width: 100%;
       height: 100%;
-      background-color: black;
+      background: black;
+      position: absolute;
+      top: 0; left: 0;
     }
   </style>
 </head>
 <body>
-  <canvas id="heart"></canvas>
+  <div id="colorSliderContainer" title="Rəngi seç">
+    <div id="sliderThumb"></div>
+  </div>
+  <div id="container">
+    <canvas id="heart"></canvas>
+  </div>
   <script>
-    window.requestAnimationFrame =
-      window.__requestAnimationFrame ||
-      window.requestAnimationFrame ||
-      window.webkitRequestAnimationFrame ||
-      window.mozRequestAnimationFrame ||
-      window.oRequestAnimationFrame ||
-      window.msRequestAnimationFrame ||
-      function (cb, el) {
-        var lastTime = el.__lastTime || 0;
-        var currTime = Date.now();
-        var timeToCall = Math.max(1, 33 - (currTime - lastTime));
-        window.setTimeout(cb, timeToCall);
-        el.__lastTime = currTime + timeToCall;
-      };
+    const slider = document.getElementById("colorSliderContainer");
+    const thumb = document.getElementById("sliderThumb");
 
-    window.isDevice = /android|webos|iphone|ipad|ipod|blackberry|iemobile|opera mini/i.test(
-      (navigator.userAgent || navigator.vendor || window.opera).toLowerCase()
-    );
+    let canvas = document.getElementById('heart');
+    let ctx = canvas.getContext('2d');
+    let width, height;
 
-    var loaded = false;
+    function resize() {
+      canvas.width = window.innerWidth;
+      canvas.height = window.innerHeight - slider.offsetHeight;
+      width = canvas.width;
+      height = canvas.height;
+    }
 
-    var init = function () {
-      if (loaded) return;
-      loaded = true;
-      var mobile = window.isDevice;
-      var koef = mobile ? 0.5 : 1;
-      var canvas = document.getElementById("heart");
-      var ctx = canvas.getContext("2d");
-      var width = canvas.width = koef * innerWidth;
-      var height = canvas.height = koef * innerHeight;
-      var rand = Math.random;
+    resize();
+    window.addEventListener('resize', resize);
 
-      ctx.fillStyle = "black";
-      ctx.fillRect(0, 0, width, height);
+    function heartPosition(t) {
+      return [
+        Math.pow(Math.sin(t), 3),
+        -(15 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t)),
+      ];
+    }
 
-      var drawText = function () {
-        ctx.font = "60px Arial";
-        ctx.fillStyle = "lightblue";
-        ctx.textAlign = "center";
-        ctx.fillText("", width / 2, height / 2.2 + 400);
-      };
+    function scaleAndTranslate(pos, sx, sy, dx, dy) {
+      return [dx + pos[0] * sx, dy + pos[1] * sy];
+    }
 
-      var heartPosition = function (rad) {
-        return [
-          Math.pow(Math.sin(rad), 3),
-          -(15 * Math.cos(rad) - 5 * Math.cos(2 * rad) - 2 * Math.cos(3 * rad) - Math.cos(4 * rad)),
-        ];
-      };
+    let pointsOrigin = [];
+    let dr = 0.1;
 
-      var scaleAndTranslate = function (pos, sx, sy, dx, dy) {
-        return [dx + pos[0] * sx, dy + pos[1] * sy];
-      };
-
-      window.addEventListener("resize", function () {
-        width = canvas.width = koef * innerWidth;
-        height = canvas.height = koef * innerHeight;
-        ctx.fillStyle = "black";
-        ctx.fillRect(0, 0, width, height);
-      });
-
-      var traceCount = mobile ? 20 : 50;
-      var pointsOrigin = [];
-      var dr = mobile ? 0.3 : 0.1;
-
-      for (var i = 0; i < Math.PI * 2; i += dr)
+    function initPoints() {
+      pointsOrigin = [];
+      for (let i = 0; i < Math.PI * 2; i += dr)
         pointsOrigin.push(scaleAndTranslate(heartPosition(i), 180, 10, 0, 0));
-      for (var i = 0; i < Math.PI * 2; i += dr)
+      for (let i = 0; i < Math.PI * 2; i += dr)
         pointsOrigin.push(scaleAndTranslate(heartPosition(i), 130, 7, 0, 0));
-      for (var i = 0; i < Math.PI * 2; i += dr)
+      for (let i = 0; i < Math.PI * 2; i += dr)
         pointsOrigin.push(scaleAndTranslate(heartPosition(i), 90, 4, 0, 0));
+    }
 
-      var heartPointsCount = pointsOrigin.length;
-      var targetPoints = [];
+    initPoints();
+    let heartPointsCount = pointsOrigin.length;
+    let targetPoints = [];
 
-      var pulse = function (kx, ky) {
-        for (var i = 0; i < pointsOrigin.length; i++) {
-          targetPoints[i] = [
-            kx * pointsOrigin[i][0] + width / 2,
-            ky * pointsOrigin[i][1] + height / 2.2,
-          ];
-        }
-      };
+    function pulse(kx, ky) {
+      for (let i = 0; i < pointsOrigin.length; i++) {
+        targetPoints[i] = [
+          kx * pointsOrigin[i][0] + width / 2,
+          ky * pointsOrigin[i][1] + height / 2.2,
+        ];
+      }
+    }
 
-      var e = [];
-      for (var i = 0; i < heartPointsCount; i++) {
-        var x = rand() * width;
-        var y = rand() * height;
+    let rand = Math.random;
+    let e = [];
+
+    // Rəng parametrləri
+    let targetHue = 270; // başlanğıc rəng tonu (bənövşəyi)
+    let currentHue = targetHue;
+
+    function hslColor(h) {
+      h = ((h % 360) + 360) % 360;
+      return `hsl(${h}, 100%, 50%)`;
+    }
+
+    let currentColor = hslColor(currentHue);
+
+    function initParticles() {
+      e = [];
+      for (let i = 0; i < heartPointsCount; i++) {
+        let x = rand() * width;
+        let y = rand() * height;
         e[i] = {
           vx: 0,
           vy: 0,
@@ -113,67 +138,90 @@
           q: ~~(rand() * heartPointsCount),
           D: 2 * (i % 2) - 1,
           force: 0.2 * rand() + 0.7,
-          f: "rgba(255,140,0,0.8)", // Narıncı rəng
-          trace: Array.from({ length: traceCount }, () => ({ x, y })),
+          f: currentColor,
+          trace: Array.from({ length: 50 }, () => ({ x, y })),
         };
       }
+    }
 
-      var config = { traceK: 0.4, timeDelta: 0.6 };
-      var time = 0;
+    initParticles();
 
-      var loop = function () {
-        var n = -Math.cos(time);
-        pulse((1 + n) * 0.5, (1 + n) * 0.5);
-        time += (Math.sin(time) < 0 ? 9 : n > 0.8 ? 0.2 : 1) * config.timeDelta;
+    slider.addEventListener("mousedown", (e) => {
+      let rect = slider.getBoundingClientRect();
+      let x = Math.min(Math.max(0, e.clientX - rect.left), rect.width);
+      moveThumb(x);
 
-        ctx.fillStyle = "rgba(0,0,0,.1)";
-        ctx.fillRect(0, 0, width, height);
+      document.onmousemove = function(e2) {
+        let x = Math.min(Math.max(0, e2.clientX - rect.left), rect.width);
+        moveThumb(x);
+      };
+      document.onmouseup = () => document.onmousemove = null;
+    });
 
-        for (var i = e.length; i--;) {
-          var u = e[i];
-          var q = targetPoints[u.q];
-          var dx = u.trace[0].x - q[0];
-          var dy = u.trace[0].y - q[1];
-          var length = Math.sqrt(dx * dx + dy * dy);
+    function moveThumb(x) {
+      x = Math.min(Math.max(0, x), slider.offsetWidth);
+      thumb.style.left = x + "px";
+      targetHue = (x / slider.offsetWidth) * 360;
+    }
 
-          if (length < 10) {
-            if (rand() > 0.95) {
-              u.q = ~~(rand() * heartPointsCount);
-            } else {
-              if (rand() > 0.99) u.D *= -1;
-              u.q = (u.q + u.D) % heartPointsCount;
-              if (u.q < 0) u.q += heartPointsCount;
-            }
+    let config = { traceK: 0.4, timeDelta: 0.6 };
+    let time = 0;
+
+    function loop() {
+      // Animasiyanın köhnə ritmi və rəng yumşaq keçidi
+      currentHue += (targetHue - currentHue) * 0.1;
+      currentColor = hslColor(currentHue);
+
+      for (let i = 0; i < e.length; i++) {
+        e[i].f = currentColor;
+      }
+
+      let n = -Math.cos(time);
+      pulse((1 + n) * 0.5, (1 + n) * 0.5);
+      time += (Math.sin(time) < 0 ? 9 : n > 0.8 ? 0.2 : 1) * config.timeDelta;
+
+      ctx.fillStyle = "rgba(0,0,0,0.1)"; // Əvvəlki kimi yumşaq iz effekti
+      ctx.fillRect(0, 0, width, height);
+
+      for (let i = e.length; i--;) {
+        let u = e[i];
+        let q = targetPoints[u.q];
+        let dx = u.trace[0].x - q[0];
+        let dy = u.trace[0].y - q[1];
+        let length = Math.sqrt(dx * dx + dy * dy);
+
+        if (length < 10) {
+          if (rand() > 0.95) {
+            u.q = ~~(rand() * heartPointsCount);
+          } else {
+            if (rand() > 0.99) u.D *= -1;
+            u.q = (u.q + u.D) % heartPointsCount;
+            if (u.q < 0) u.q += heartPointsCount;
           }
-
-          u.vx += (-dx / length) * u.speed;
-          u.vy += (-dy / length) * u.speed;
-          u.trace[0].x += u.vx;
-          u.trace[0].y += u.vy;
-          u.vx *= u.force;
-          u.vy *= u.force;
-
-          for (var k = 0; k < u.trace.length - 1; k++) {
-            var T = u.trace[k];
-            var N = u.trace[k + 1];
-            N.x -= config.traceK * (N.x - T.x);
-            N.y -= config.traceK * (N.y - T.y);
-          }
-
-          ctx.fillStyle = u.f;
-          u.trace.forEach((t) => ctx.fillRect(t.x, t.y, 1, 1));
         }
 
-        drawText();
-        window.requestAnimationFrame(loop, canvas);
-      };
+        u.vx += (-dx / length) * u.speed;
+        u.vy += (-dy / length) * u.speed;
+        u.trace[0].x += u.vx;
+        u.trace[0].y += u.vy;
+        u.vx *= u.force;
+        u.vy *= u.force;
 
-      loop();
-    };
+        for (let k = 0; k < u.trace.length - 1; k++) {
+          let T = u.trace[k];
+          let N = u.trace[k + 1];
+          N.x -= config.traceK * (N.x - T.x);
+          N.y -= config.traceK * (N.y - T.y);
+        }
 
-    var s = document.readyState;
-    if (s === "complete" || s === "loaded" || s === "interactive") init();
-    else document.addEventListener("DOMContentLoaded", init);
+        ctx.fillStyle = u.f;
+        u.trace.forEach((t) => ctx.fillRect(t.x, t.y, 1, 1));
+      }
+
+      window.requestAnimationFrame(loop);
+    }
+
+    loop();
   </script>
 </body>
 </html>
